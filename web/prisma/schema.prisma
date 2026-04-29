@@ -1,0 +1,101 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id              String   @id @default(cuid())
+  email           String   @unique
+  name            String?
+  hashedPassword  String?
+  createdAt       DateTime @default(now())
+  orders          Order[]
+  reviews         Review[]
+  quizResponses   QuizResponse[]
+}
+
+model Product {
+  id           String   @id @default(cuid())
+  slug         String   @unique
+  name         String
+  tagline      String
+  description  String
+  priceCents   Int
+  subscriptionPriceCents Int?
+  imageUrl     String
+  capsules     Int      // nombre de gélules par pot
+  servingSize  String   // ex: "2 gélules / jour"
+  category     String   // cycle | energy | sleep | skin | immunity | hormones
+  goals        String   // CSV: "energy,immunity"
+  featured     Boolean  @default(false)
+  ingredients  Ingredient[]
+  reviews      Review[]
+  orderItems   OrderItem[]
+  createdAt    DateTime @default(now())
+}
+
+model Ingredient {
+  id          String  @id @default(cuid())
+  productId   String
+  name        String
+  dosage      String   // ex: "200 mg"
+  benefit     String
+  product     Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+}
+
+model Review {
+  id         String   @id @default(cuid())
+  productId  String
+  userId     String?
+  authorName String
+  rating     Int      // 1..5
+  title      String
+  body       String
+  createdAt  DateTime @default(now())
+  product    Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  user       User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+}
+
+model Order {
+  id              String   @id @default(cuid())
+  userId          String?
+  email           String
+  totalCents      Int
+  status          String   @default("pending") // pending | paid | failed
+  stripeSessionId String?  @unique
+  createdAt       DateTime @default(now())
+  items           OrderItem[]
+  user            User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+}
+
+model OrderItem {
+  id         String  @id @default(cuid())
+  orderId    String
+  productId  String
+  quantity   Int
+  unitCents  Int
+  isSubscription Boolean @default(false)
+  order      Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product    Product @relation(fields: [productId], references: [id])
+}
+
+model NewsletterSubscriber {
+  id         String   @id @default(cuid())
+  email      String   @unique
+  promoCode  String
+  createdAt  DateTime @default(now())
+}
+
+model QuizResponse {
+  id        String   @id @default(cuid())
+  userId    String?
+  email     String?
+  answers   String   // JSON
+  recommendedSlugs String // CSV
+  createdAt DateTime @default(now())
+  user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+}

@@ -1,0 +1,37 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: #FBF8F3;
+  --foreground: #1F1B16;
+}
+
+html, body {
+  background: var(--background);
+  color: var(--foreground);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  font-family: var(--font-sans), ui-sans-serif, system-ui, sans-serif;
+}
+
+@layer components {
+  .btn-primary {
+    @apply inline-flex items-center justify-center rounded-full bg-sage-700 px-6 py-3 text-sm font-medium uppercase tracking-widest text-cream-50 transition hover:bg-sage-800;
+  }
+  .btn-outline {
+    @apply inline-flex items-center justify-center rounded-full border border-ink/20 bg-transparent px-6 py-3 text-sm font-medium uppercase tracking-widest text-ink transition hover:border-ink hover:bg-ink hover:text-cream-50;
+  }
+  .container-x {
+    @apply mx-auto w-full max-w-container px-6 lg:px-12;
+  }
+  .h-display {
+    @apply font-serif text-4xl leading-[1.1] tracking-tight md:text-5xl lg:text-6xl;
+  }
+  .eyebrow {
+    @apply text-xs uppercase tracking-widest text-sage-700;
+  }
+}
