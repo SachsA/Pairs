@@ -1,21 +1,24 @@
 generator client {
-  provider = "prisma-client-js"
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "linux-musl-openssl-3.0.x"]
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
 model User {
-  id              String   @id @default(cuid())
-  email           String   @unique
-  name            String?
-  hashedPassword  String?
-  createdAt       DateTime @default(now())
-  orders          Order[]
-  reviews         Review[]
-  quizResponses   QuizResponse[]
+  id               String   @id @default(cuid())
+  email            String   @unique
+  name             String?
+  hashedPassword   String?
+  stripeCustomerId String?  @unique
+  createdAt        DateTime @default(now())
+  orders           Order[]
+  reviews          Review[]
+  quizResponses    QuizResponse[]
+  subscriptions    Subscription[]
 }
 
 model Product {
@@ -61,15 +64,33 @@ model Review {
 }
 
 model Order {
-  id              String   @id @default(cuid())
-  userId          String?
-  email           String
-  totalCents      Int
-  status          String   @default("pending") // pending | paid | failed
-  stripeSessionId String?  @unique
-  createdAt       DateTime @default(now())
-  items           OrderItem[]
-  user            User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  id                  String   @id @default(cuid())
+  userId              String?
+  email               String
+  subtotalCents       Int      @default(0)
+  shippingCents       Int      @default(0)
+  discountCents       Int      @default(0)
+  totalCents          Int
+  status              String   @default("pending") // pending | paid | failed | canceled
+  stripeSessionId     String?  @unique
+  stripePaymentIntent String?
+  createdAt           DateTime @default(now())
+  items               OrderItem[]
+  user                User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+}
+
+model Subscription {
+  id                   String   @id @default(cuid())
+  userId               String
+  stripeSubscriptionId String   @unique
+  stripePriceId        String?
+  productId            String?
+  status               String   // active | past_due | canceled | unpaid | trialing | incomplete
+  currentPeriodEnd     DateTime?
+  cancelAtPeriodEnd    Boolean  @default(false)
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+  user                 User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model OrderItem {

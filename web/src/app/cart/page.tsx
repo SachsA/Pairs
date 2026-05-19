@@ -6,13 +6,22 @@ import { useState } from "react";
 import { useCart } from "@/lib/cart";
 import { formatPrice } from "@/lib/format";
 import { useSession } from "next-auth/react";
+import {
+  computeShippingCents,
+  hasAnySubscription,
+  FREE_SHIPPING_THRESHOLD_CENTS
+} from "@/lib/pricing";
 
 export default function CartPage() {
   const { data: session } = useSession();
   const lines = useCart((s) => s.lines);
   const updateQty = useCart((s) => s.updateQty);
   const removeItem = useCart((s) => s.removeItem);
-  const totalCents = useCart((s) => s.totalCents());
+  const subtotalCents = useCart((s) => s.totalCents());
+  const containsSub = hasAnySubscription(lines);
+  const shippingCents = computeShippingCents(subtotalCents, containsSub);
+  const totalCents = subtotalCents + shippingCents;
+  const remainingForFreeShipping = Math.max(0, FREE_SHIPPING_THRESHOLD_CENTS - subtotalCents);
   const [email, setEmail] = useState(session?.user?.email ?? "");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -111,17 +120,34 @@ export default function CartPage() {
           <dl className="mt-4 space-y-2 text-sm">
             <div className="flex justify-between">
               <dt>Sous-total</dt>
-              <dd>{formatPrice(totalCents)}</dd>
+              <dd>{formatPrice(subtotalCents)}</dd>
             </div>
-            <div className="flex justify-between text-ink/60">
-              <dt>Livraison</dt>
-              <dd>Calculée à l'étape suivante</dd>
-            </div>
+            {containsSub ? (
+              <div className="flex justify-between text-ink/60">
+                <dt>Livraison</dt>
+                <dd>Incluse (abonnement)</dd>
+              </div>
+            ) : shippingCents === 0 ? (
+              <div className="flex justify-between text-sage-700">
+                <dt>Livraison</dt>
+                <dd>Offerte</dd>
+              </div>
+            ) : (
+              <div className="flex justify-between text-ink/60">
+                <dt>Livraison</dt>
+                <dd>{formatPrice(shippingCents)}</dd>
+              </div>
+            )}
             <div className="mt-4 flex justify-between border-t border-ink/10 pt-4 font-medium">
               <dt>Total</dt>
               <dd>{formatPrice(totalCents)}</dd>
             </div>
           </dl>
+          {remainingForFreeShipping > 0 && !containsSub && (
+            <p className="mt-3 rounded-lg bg-cream-50 px-3 py-2 text-xs text-sage-700">
+              Plus que <strong>{formatPrice(remainingForFreeShipping)}</strong> pour la livraison offerte.
+            </p>
+          )}
           {!session?.user && (
             <input
               type="email"

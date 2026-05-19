@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
+import { sendEmailAsync } from "@/lib/email";
+import { QuizResultsEmail } from "@/emails/QuizResultsEmail";
 
 const schema = z.object({
   email: z.string().email().optional(),
@@ -22,5 +24,25 @@ export async function POST(req: Request) {
       recommendedSlugs: recommendedSlugs.join(",")
     }
   });
+
+  // Si l'utilisateur a fourni un email, on lui envoie ses recommandations.
+  if (email && recommendedSlugs.length > 0) {
+    const products = await prisma.product.findMany({
+      where: { slug: { in: recommendedSlugs } },
+      select: { slug: true, name: true }
+    });
+    // Conserver l'ordre des recommandations
+    const bySlug = new Map(products.map((p) => [p.slug, p]));
+    const ordered = recommendedSlugs
+      .map((s) => bySlug.get(s))
+      .filter((p): p is { slug: string; name: string } => Boolean(p));
+
+    sendEmailAsync({
+      to: email.toLowerCase(),
+      subject: "Votre rituel Pairs personnalisé",
+      react: QuizResultsEmail({ recommendations: ordered })
+    });
+  }
+
   return NextResponse.json({ ok: true });
 }

@@ -1,0 +1,22 @@
+# Stack de dev local : juste Postgres dans Docker, l'app tourne en npm run dev sur l'hôte.
+# Démarrage : `docker compose -f docker-compose.dev.yml up -d`
+# Connexion Prisma : DATABASE_URL=postgresql://pairs:pairs_dev_password@localhost:5432/pairs?schema=public
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: pairs
+      POSTGRES_USER: pairs
+      POSTGRES_PASSWORD: pairs_dev_password
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_dev_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U pairs"]
+      interval: 5s
+
+volumes:
+  postgres_dev_data:

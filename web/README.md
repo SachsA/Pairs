@@ -2,16 +2,22 @@
 
 Compléments alimentaires pour femmes, sur abonnement ou à l'unité, dosés au juste pour chaque phase du cycle.
 
-Stack : **Next.js 14 (App Router) · TypeScript · Tailwind · Prisma + SQLite · NextAuth · Stripe · Zustand**.
+Stack : **Next.js 14 (App Router) · TypeScript · Tailwind · Prisma + Postgres · NextAuth · Stripe · Zustand**.
 
-## Démarrage rapide
+Pour la mise en ligne (Docker, VPS, HTTPS, DEV gate), voir [`../DEPLOY.md`](../DEPLOY.md).
+
+## Démarrage rapide (dev local)
 
 ```bash
+# Depuis la racine du repo :
+docker compose -f docker-compose.dev.yml up -d   # Postgres local
+
+# Puis dans ce dossier :
 cd web
 npm install
 cp .env.example .env              # Prisma lit .env (pas .env.local)
-npx prisma db push                # crée la base SQLite
-npm run db:seed                   # remplit avec 6 produits + avis
+npx prisma migrate dev            # applique le schéma à Postgres
+npm run db:seed                   # 6 produits + avis
 npm run dev                       # http://localhost:3000
 ```
 
@@ -19,16 +25,18 @@ npm run dev                       # http://localhost:3000
 
 ## Variables d'environnement
 
-Voir `.env.example`. Pour la prod :
+Voir `.env.example`. Variables clés :
 
 | Var | Rôle |
 | --- | --- |
-| `DATABASE_URL` | SQLite en local. Postgres recommandé en prod (`postgresql://…`). |
+| `DATABASE_URL` | `postgresql://user:pass@host:5432/db?schema=public` |
 | `NEXTAUTH_SECRET` | `openssl rand -base64 32` |
 | `NEXTAUTH_URL` | URL publique du site |
-| `STRIPE_SECRET_KEY` | clé secrète Stripe (commence par `sk_…`) |
+| `STRIPE_SECRET_KEY` | clé secrète Stripe (`sk_…`) |
 | `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` | clé publique Stripe (`pk_…`) |
 | `NEXT_PUBLIC_SITE_URL` | URL pour les redirections post-paiement |
+| `SITE_LOCK` | `1` = site bloqué par mot de passe (mode DEV), `0` = public |
+| `SITE_LOCK_PASSWORD` | mot de passe du DEV gate |
 
 **Mode dev sans Stripe** : si `STRIPE_SECRET_KEY` contient `placeholder`, le checkout simule un paiement réussi (utile pour tester sans compte Stripe).
 
@@ -79,7 +87,7 @@ web/
 
 ## Avant la prod
 
-1. Migrer SQLite → Postgres (Supabase, Neon, Railway).
+1. ~~Migrer SQLite → Postgres~~ → fait. Postgres est dans `docker-compose.yml`.
 2. Ajouter le webhook Stripe `/api/webhook` pour confirmer les paiements de manière fiable.
 3. Configurer un vrai service d'envoi d'emails (Resend, Postmark) pour la confirmation de commande et les codes promo newsletter.
 4. Politique de confidentialité, CGV, mentions légales.

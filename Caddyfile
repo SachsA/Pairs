@@ -1,0 +1,55 @@
+# Reverse proxy Caddy.
+# HTTPS automatique (Let's Encrypt) dès que le DNS pointe vers ce serveur.
+# Caddy gère aussi la redirection HTTP → HTTPS et HTTP/2/3.
+
+{$DOMAIN} {
+	encode zstd gzip
+
+	# Headers de sécurité (en complément de ceux posés par Next.js)
+	header {
+		# HSTS 2 ans (HTTPS-only)
+		Strict-Transport-Security "max-age=63072000; includeSubDomains; preload"
+		# Protection clickjacking
+		X-Frame-Options "DENY"
+		# Pas de sniffing MIME
+		X-Content-Type-Options "nosniff"
+		# Referrer minimal
+		Referrer-Policy "strict-origin-when-cross-origin"
+		# Désactive les API navigateur sensibles
+		Permissions-Policy "camera=(), microphone=(), geolocation=(), interest-cohort=()"
+		# CSP : on autorise Stripe + Unsplash + nos propres assets.
+		# Si tu ajoutes Plausible/GA, ajoute leur domaine dans script-src et connect-src.
+		Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline' https://js.stripe.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com; img-src 'self' data: https: blob:; connect-src 'self' https://api.stripe.com; frame-src https://js.stripe.com https://hooks.stripe.com; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'"
+		# Cache un peu les assets immutables
+		?Cache-Control "no-store"
+		-Server
+	}
+
+	# Cache long pour les assets buildés
+	@static {
+		path /_next/static/* /static/* /favicon.svg
+	}
+	header @static Cache-Control "public, max-age=31536000, immutable"
+
+	# Limite raisonnable contre les uploads géants
+	request_body {
+		max_size 5MB
+	}
+
+	# Proxy vers l'app Next.js
+	reverse_proxy app:3000 {
+		header_up X-Real-IP {remote_host}
+		header_up X-Forwarded-For {remote_host}
+		header_up X-Forwarded-Proto {scheme}
+	}
+
+	# Logs structurés
+	log {
+		output stdout
+		format json
+		level INFO
+	}
+
+	# Configuration TLS (Let's Encrypt avec ton email)
+	tls {$ACME_EMAIL}
+}
