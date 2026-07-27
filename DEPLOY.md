@@ -1,6 +1,8 @@
 # Guide de déploiement Pairs
 
-Ce guide te conduit d'un repo fraîchement cloné jusqu'à un site en ligne sur ton propre domaine, sécurisé, sauvegardé, et bloqué en mode DEV par mot de passe le temps que ton ami valide le produit.
+> [`README.md`](./README.md) comprendre et installer · [`ROADMAP.md`](./ROADMAP.md) avancement · **`DEPLOY.md`** mise en ligne
+
+Ce guide te conduit d'un dépôt fraîchement cloné jusqu'à un site en ligne sur ton propre domaine, sécurisé, sauvegardé, et verrouillé par mot de passe le temps que ton ami valide le produit.
 
 **Stack déployée** : Next.js standalone (Docker) + Postgres 16 (Docker) + Caddy (reverse proxy + HTTPS auto via Let's Encrypt) + UFW + fail2ban.
 
@@ -436,54 +438,39 @@ Client redirigé vers /checkout/success
 
 ---
 
-## Checklist avant d'ouvrir au public
+## Checklist du jour de la mise en ligne
 
-- [ ] Compte Stripe activé (KYC validé), clés `sk_live_…` mises dans `.env.production`
-- [ ] Webhook Stripe configuré en mode live (URL + secret + 5 events)
-- [ ] Customer Portal activé dans Stripe Settings
-- [ ] Codes promo créés dans Stripe (au moins `BIENVENUE10`)
-- [ ] CGV, Mentions légales, Politique de confidentialité rédigées
-- [ ] Service d'envoi d'emails (Resend) branché pour les confirmations
-- [ ] Tests de paiement réels effectués (un petit montant en CB perso)
-- [ ] Backups vérifiés (restaurer un dump dans un environnement test)
-- [ ] Monitoring UptimeRobot actif
-- [ ] `SITE_LOCK=0` activé
-- [ ] Annonce publique 🎉
+Vérifications purement techniques, à faire dans l'ordre le jour J.
+Pour l'avancement fonctionnel du produit (pages légales, back-office, stocks…), voir [`ROADMAP.md`](./ROADMAP.md).
 
-Phase 1 — Tes 3 tâches initiales (back-office d'abord, parce que les pages légales en dépendent)
-1. Back-office admin produits. Page /admin protégée par rôle ADMIN, CRUD produits + ingrédients + photos (upload), gestion stocks, modération des avis. Ton ami se connecte avec un compte marqué admin et gère tout depuis une UI.
-2. Bannière cookies RGPD + Cookies tracking-aware. Bannière qui bloque les cookies non-essentiels tant que le client n'a pas consenti. Pré-requis pour l'analytics (sinon illégal en Europe).
-3. Analytics. Plausible (RGPD-friendly, pas besoin de bannière dans certains cas) ou GA4 (gratuit, plus complet). Tracking : pages vues, événements (ajout panier, checkout, achat, inscription newsletter, quiz complété).
-4. Pages légales. CGV, mentions légales, politique de confidentialité, politique de cookies, droit de rétractation 14 jours, mentions sanitaires obligatoires pour les compléments alimentaires. Liens en footer.
-Phase 2 — Bloquants pour ouvrir au public (ordre opérationnel)
-5. Gestion des stocks. Champ stockQuantity + stockStatus (in_stock, low_stock, out_of_stock) sur Product. Décrément automatique à chaque commande payée (dans le webhook Stripe). Affichage "Plus que X en stock" sur la fiche produit. Désactivation auto du bouton "Ajouter au panier" si rupture.
-6. Notification commande à l'équipe. Email à commandes@pairs.fr à chaque nouvelle commande payée, + webhook Slack/Discord optionnel. Sans ça personne ne sait qu'il y a un colis à préparer.
-7. Suivi de commande côté admin. Dans le back-office : voir toutes les commandes, changer le statut (paid → preparing → shipped → delivered), ajouter un numéro de suivi (Colissimo / Mondial Relay / Chronopost). Email automatique au client à chaque changement.
-8. Sentry pour le monitoring d'erreurs. 10 min à brancher, te sauve quand un bug passe en prod (typiquement les premiers webhooks Stripe foireux).
-9. Politique de retour + droit de rétractation opérationnel. Adresse de retour, formulaire type, processus côté admin pour rembourser via Stripe.
-Phase 3 — Vraies données (côté ton ami, pas côté dev)
-10. Vraies photos produits + descriptions définitives. 3-5 photos par produit (face, dos avec composition lisible, lifestyle), hébergées sur S3/Cloudflare R2 plutôt que Unsplash. Descriptions et compositions définitives validées par la formulation.
-11. Compte Stripe live activé (KYC). SIRET, RIB, justificatifs. Compte créé, business validé par Stripe, clés sk_live_… en place. Test de paiement avec une vraie CB pour de vrai.
-12. Domaine pro + emails pros. pairs.fr + contact@pairs.fr, commandes@pairs.fr, hello@pairs.fr. Configuration SPF/DKIM/DMARC pour la délivrabilité Resend.
-Phase 4 — Qualité produit (avant ou juste après ouverture)
-13. Adresses de livraison persistantes. Stocker l'adresse de l'utilisateur (récupérée depuis Stripe ou saisie dans /account). Pré-remplissage au prochain checkout.
-14. Factures PDF pour les paiements uniques. Stripe les fait pour les abos, mais pas pour les one-shot. Génération + lien de téléchargement dans /account.
-15. Recherche produit + tri. Champ de recherche sur /products. Tri par prix, nouveauté, popularité.
-16. Avis clients vérifiés. Système qui permet aux acheteurs réels de laisser un avis (un email post-livraison "Comment évalueriez-vous ce produit ?"). Modération côté admin. Anti-fake-reviews.
-17. Page contact + FAQ. Formulaire de contact qui envoie à contact@pairs.fr. FAQ couvrant : livraison, retours, abonnement, posologie, ingrédients, allergies.
-Phase 5 — Levers de croissance (post-lancement)
-18. Récupération de paniers abandonnés. Email 24h après ajout au panier sans paiement. +10-30% de conversion typiquement.
-19. Tracking événements analytics avancé. Conversions, entonnoirs, attribution canal (organique vs payant).
-20. Programme de parrainage / fidélité. "Parraine une amie = 10 € pour toi et elle". Très efficace dans le wellness.
-21. Marketing email (Klaviyo ou Brevo). Campagnes segmentées (clients abos vs one-shot, dormants, gros panier moyen…). Welcome series, ré-engagement.
-22. Cartes cadeaux. Format classique pour ce type de produit.
-23. Chat live. Crisp gratuit pour démarrer. Améliore la conversion en levant les blocages temps réel.
-Phase 6 — Robustesse / opérations (en parallèle)
-24. Tests automatisés. Tests d'intégration sur les flows critiques (checkout, webhook Stripe, inscription, panier). Pour pouvoir livrer sans casser.
-25. CI/CD GitHub Actions. Push sur main → build → tests → deploy auto sur VPS. Fini le git pull manuel.
-26. Compta / export commandes. Export CSV mensuel des commandes pour la compta, ou intégration Pennylane/Tiime/Sellsy.
-27. Optimisations performance + SEO. Sitemap.xml dynamique, schema.org Product + AggregateRating + Offer, meta descriptions par page produit, formats images AVIF/WebP, optimisation Core Web Vitals.
-Phase 7 — Si tu vises l'international
-28. Multi-langue (EN minimum). i18n via next-intl ou next-translate.
-29. Multi-devise + Stripe Tax. Pour vendre en Suisse, UK, US. Stripe Tax gère la TVA par pays automatiquement (1,5%/transaction).
-30. Multi-pays livraison. Élargir au-delà de FR/BE/CH/LU/MC, négocier tarifs transporteurs internationaux.
+**Infrastructure**
+
+- [ ] VPS provisionné, `init-server.sh` exécuté (Docker, UFW, fail2ban, SSH durci)
+- [ ] DNS pointé vers l'IP du serveur, propagation vérifiée (`dig ton-domaine.fr +short`)
+- [ ] `.env.production` rempli et en `chmod 600`
+- [ ] `NEXTAUTH_SECRET` et `POSTGRES_PASSWORD` générés avec `openssl rand -base64 32`
+- [ ] `./scripts/deploy.sh` passé sans erreur, `docker compose ps` tout en healthy
+- [ ] Certificat HTTPS délivré par Let's Encrypt, redirection HTTP → HTTPS active
+- [ ] Sauvegarde Postgres en cron, et **restauration testée** sur un dump réel
+- [ ] Supervision active (UptimeRobot ou équivalent)
+
+**Stripe**
+
+- [ ] Compte activé (KYC validé), clés `sk_live_…` en place
+- [ ] Webhook configuré en mode live : URL, secret, et les 5 événements
+- [ ] Customer Portal activé dans les réglages Stripe
+- [ ] Codes promo créés (au minimum `BIENVENUE10`)
+- [ ] Paiement réel testé de bout en bout avec une vraie carte, puis remboursé
+
+**Emails**
+
+- [ ] Domaine vérifié dans Resend (SPF et DKIM au vert)
+- [ ] `EMAIL_FROM` sur le domaine vérifié
+- [ ] Les quatre emails reçus pour de vrai, et pas en spam
+
+**Ouverture**
+
+- [ ] Tâches 26 à 34 de la roadmap terminées (back-office, pages légales, stocks, notifications)
+- [ ] `SITE_LOCK=0` puis redéploiement
+- [ ] `robots.txt` bascule bien en `Allow: /`
+- [ ] Annonce publique
