@@ -1,1 +1,22 @@
+# ─── Secrets ─ NE JAMAIS COMMITER ────────────────────────────────────────
+# .env.production contient les clés Stripe live, le mot de passe Postgres
+# et le secret NextAuth. Seuls les fichiers *.example sont versionnés.
+.env
+.env.*
+!.env.example
+!.env.production.example
+
+# ─── Données ─────────────────────────────────────────────────────────────
+# Dumps Postgres : contiennent les données clients (emails, commandes).
+backups/
+*.sql
+*.sql.gz
+*.dump
+
+# ─── Système et éditeurs ─────────────────────────────────────────────────
 .DS_Store
+Thumbs.db
+*.log
+.idea/
+.vscode/
+*.swp

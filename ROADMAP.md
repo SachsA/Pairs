@@ -4,7 +4,7 @@
 
 Source unique de vérité sur l'avancement du projet. Toute tâche terminée est cochée ici, avec les fichiers qui l'implémentent.
 
-- **Dernière mise à jour** : 15 juin 2026
+- **Dernière mise à jour** : 16 juin 2026
 - **Avancement** : 25 / 55 tâches — fondations, infra, emails et paiements terminés
 - **État du site** : fonctionnel en local, jamais déployé, jamais testé avec de vrais paiements
 
@@ -195,3 +195,4 @@ Source unique de vérité sur l'avancement du projet. Toute tâche terminée est
 | 3 | Tâches 20 et 21 — emails transactionnels Resend |
 | 4 | Tâches 22 à 25 — paiements et abonnements Stripe, portail client |
 | 5 | Réorganisation de la documentation, création de cette roadmap |
+| 6 | `CLAUDE.md` (consignes permanentes, matrice de propagation, format des commits) · correction de sécurité : `.env.production` et `backups/` n'étaient pas ignorés par git |

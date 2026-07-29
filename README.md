@@ -53,6 +53,7 @@ Pairs/
 ├─ README.md                  ← vous êtes ici : comprendre et installer
 ├─ ROADMAP.md                 ← avancement, tâches faites et à faire
 ├─ DEPLOY.md                  ← mettre le site en ligne pas à pas
+├─ CLAUDE.md                  ← consignes de travail permanentes pour Claude
 │
 ├─ docker-compose.yml         production : app + Postgres + Caddy
 ├─ docker-compose.dev.yml     développement : Postgres seul
@@ -173,3 +174,4 @@ Pour ouvrir au public : `SITE_LOCK=0` puis redéploiement.
 
 - [`ROADMAP.md`](./ROADMAP.md) — ce qui est fait, ce qui reste, les limites connues
 - [`DEPLOY.md`](./DEPLOY.md) — nom de domaine, VPS, DNS, pare-feu, HTTPS, Stripe, Resend, sauvegardes, dépannage
+- [`CLAUDE.md`](./CLAUDE.md) — consignes permanentes appliquées par Claude à chaque intervention : matrice de propagation dans la doc, vérifications obligatoires, format des messages de commit
