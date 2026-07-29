@@ -163,6 +163,25 @@ async function handleInvoiceFailed(invoice: Stripe.Invoice) {
   console.warn("Invoice failed :", invoice.id, invoice.customer_email);
 }
 
+/**
+ * Récupère la fin de la période de facturation en cours.
+ *
+ * Stripe a déplacé cette donnée : jusqu'aux versions d'API 2024 elle se trouve
+ * sur la subscription, à partir des versions 2025 elle est portée par chaque
+ * item de facturation. On interroge les deux emplacements sans dépendre du
+ * typage du SDK, qui ne décrit que la version courante.
+ */
+function readPeriodEnd(sub: Stripe.Subscription): number | null {
+  const surLaSubscription = (sub as unknown as { current_period_end?: number | null })
+    .current_period_end;
+  if (typeof surLaSubscription === "number") return surLaSubscription;
+
+  const surLItem = (
+    sub.items.data[0] as unknown as { current_period_end?: number | null } | undefined
+  )?.current_period_end;
+  return typeof surLItem === "number" ? surLItem : null;
+}
+
 async function syncSubscription(sub: Stripe.Subscription) {
   // Retrouve le user via stripeCustomerId
   const customerId = typeof sub.customer === "string" ? sub.customer : sub.customer.id;
@@ -182,12 +201,7 @@ async function syncSubscription(sub: Stripe.Subscription) {
     productId = (productData.metadata?.productId as string | undefined) ?? null;
   }
 
-  // current_period_end est sur les items dans les versions récentes du SDK,
-  // mais reste accessible au niveau racine sur la subscription. On lit de façon défensive.
-  const periodEnd =
-    (sub as Stripe.Subscription & { current_period_end?: number }).current_period_end ??
-    firstItem?.current_period_end ??
-    null;
+  const periodEnd = readPeriodEnd(sub);
 
   await prisma.subscription.upsert({
     where: { stripeSubscriptionId: sub.id },
