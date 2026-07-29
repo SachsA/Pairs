@@ -86,11 +86,16 @@ jobs:
           fi
           echo "Aucun fichier d'environnement réel versionné."
 
-      - name: Vérifier qu'aucune clé Stripe live ne traîne dans le dépôt
+      - name: Vérifier qu'aucune clé secrète ne traîne dans le dépôt
         run: |
-          if git grep -nE 'sk_live_[A-Za-z0-9]+' -- . ':!*.yml' > /dev/null 2>&1; then
-            echo "::error::Une clé Stripe live semble présente dans le code."
-            git grep -nE 'sk_live_[A-Za-z0-9]+' -- . ':!*.yml'
+          # Une vraie clé Stripe fait au moins 24 caractères après le préfixe :
+          # les placeholders type « sk_live_xxx » des fichiers .example ne
+          # déclenchent donc pas l'alerte. Les .example sont exclus par sécurité.
+          motif='(sk_live_|sk_test_|whsec_|re_)[A-Za-z0-9]{24,}'
+          trouve=$(git grep -nE "$motif" -- . ':!*.example' ':!.github/**' || true)
+          if [ -n "$trouve" ]; then
+            echo "::error::Une clé secrète semble présente dans le dépôt."
+            echo "$trouve"
             exit 1
           fi
-          echo "Aucune clé Stripe live détectée."
+          echo "Aucune clé secrète détectée."

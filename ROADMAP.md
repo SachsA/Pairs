@@ -179,7 +179,8 @@ Source unique de vérité sur l'avancement du projet. Toute tâche terminée est
 - **Rien n'a jamais tourné en production.** Le déploiement Docker n'a jamais été exécuté sur un vrai serveur. Le premier `deploy.sh` révélera probablement des ajustements.
 - **Aucun paiement réel n'a été testé.** Le webhook Stripe est écrit et relu, mais n'a jamais reçu un vrai événement. À valider avec le Stripe CLI (`stripe listen`) avant d'ouvrir.
 - **Aucun email n'a réellement été envoyé.** Le mode mock a été validé (rendu HTML correct), mais l'envoi via Resend n'a jamais été effectué faute de clé API.
-- **Le build Docker n'a jamais été vérifié.** L'environnement de développement utilisé bloque le téléchargement des moteurs Prisma, ce qui empêche `next build` et `prisma generate`. À vérifier en local.
+- **Le build de l'image Docker n'a jamais été exécuté.** `next build` est désormais vérifié à chaque push par l'intégration continue, mais la construction de l'image (`web/Dockerfile`) et le démarrage de la pile complète n'ont jamais été testés. Le premier `deploy.sh` fera office de test.
+- **Le build dépend du réseau.** `next/font` télécharge les polices Google au moment du build. Un incident réseau fait échouer le build (observé en CI, rattrapé par les tentatives automatiques). Si cela devient gênant, basculer sur des polices auto-hébergées.
 - **Aucun test automatisé** (tâche 49). Toute modification peut casser un parcours sans qu'on le voie.
 - **Panier mixte non géré.** Si le panier contient à la fois un achat unique et un abonnement, tout bascule en abonnement — Stripe ne permet pas de mélanger les deux dans une même session. À traiter le jour où ça se présente (deux sessions successives, ou blocage explicite côté panier).
 - **Le rate limiting est en mémoire.** Il ne tient pas si l'application tourne en plusieurs instances. Migrer vers Redis le jour où on scale.
