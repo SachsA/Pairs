@@ -5,7 +5,7 @@
 Source unique de vérité sur l'avancement du projet. Toute tâche terminée est cochée ici, avec les fichiers qui l'implémentent.
 
 - **Dernière mise à jour** : 16 juin 2026
-- **Avancement** : 25 / 55 tâches — fondations, infra, emails et paiements terminés
+- **Avancement** : 26 / 55 tâches — fondations, infra, emails, paiements et intégration continue terminés
 - **État du site** : fonctionnel en local, jamais déployé, jamais testé avec de vrais paiements
 
 > Comment lire : `[x]` = fait et présent dans le code · `[ ]` = à faire
@@ -25,7 +25,7 @@ Source unique de vérité sur l'avancement du projet. Toute tâche terminée est
 | 5 | Données réelles & démarches | ⬜ 0/3 |
 | 6 | Qualité produit | ⬜ 0/5 |
 | 7 | Leviers de croissance | ⬜ 0/6 |
-| 8 | Robustesse & opérations | ⬜ 0/4 |
+| 8 | Robustesse & opérations | 🟨 1/4 |
 | 9 | International | ⬜ 0/3 |
 
 ---
@@ -156,12 +156,13 @@ Source unique de vérité sur l'avancement du projet. Toute tâche terminée est
 
 - [ ] **49. Tests automatisés**
   Tests d'intégration sur les parcours critiques : checkout, webhook Stripe, inscription, panier.
-- [ ] **50. Intégration et déploiement continus**
-  GitHub Actions : push sur `main` → build → tests → déploiement automatique. Fini le `git pull` manuel.
+- [x] **50. Intégration continue** — GitHub Actions sur chaque push et chaque PR : lint, vérification des types, build (avec un Postgres de service, nécessaire car `generateStaticParams` interroge la base), et contrôle qu'aucun secret n'est versionné
+  `.github/workflows/ci.yml`
+  *Reste à faire, plus tard : le déploiement automatique sur le VPS.*
 - [ ] **51. Export comptable**
   Export CSV mensuel des commandes, ou intégration Pennylane / Tiime / Sellsy.
 - [ ] **52. Performance et référencement**
-  Sitemap dynamique, données structurées schema.org (Product, Offer, AggregateRating), meta descriptions par produit, images AVIF/WebP, Core Web Vitals.
+  Sitemap dynamique — et ajouter au même moment la ligne `Sitemap:` dans `robots.txt`, retirée tant que le sitemap n'existe pas. Données structurées schema.org (Product, Offer, AggregateRating), meta descriptions par produit, images AVIF/WebP, Core Web Vitals.
 
 ## Phase 9 — International ⬜
 
@@ -196,3 +197,4 @@ Source unique de vérité sur l'avancement du projet. Toute tâche terminée est
 | 4 | Tâches 22 à 25 — paiements et abonnements Stripe, portail client |
 | 5 | Réorganisation de la documentation, création de cette roadmap |
 | 6 | `CLAUDE.md` (consignes permanentes, matrice de propagation, format des commits) · correction de sécurité : `.env.production` et `backups/` n'étaient pas ignorés par git |
+| 7 | Audit complet du dépôt : tâche 50 (intégration continue), `LICENSE`, `.nvmrc`, `.editorconfig`, scripts npm normalisés, nettoyage des résidus (base SQLite, `next-env.d.ts`, variable Stripe inutilisée), migration renommée |

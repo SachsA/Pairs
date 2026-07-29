@@ -19,7 +19,11 @@ services:
       retries: 5
     networks:
       - internal
-    # Pas de port exposé : seul `app` accède via le réseau interne.
+    # Écoute uniquement sur la boucle locale du serveur : injoignable depuis
+    # Internet (et de toute façon bloqué par UFW). Permet les tâches
+    # d'administration via un tunnel SSH : seed, psql, restauration.
+    ports:
+      - "127.0.0.1:5432:5432"
 
   app:
     build:
@@ -33,7 +37,6 @@ services:
       NEXTAUTH_SECRET: ${NEXTAUTH_SECRET:?NEXTAUTH_SECRET requis}
       NEXT_PUBLIC_SITE_URL: ${NEXT_PUBLIC_SITE_URL:?NEXT_PUBLIC_SITE_URL requis}
       STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY:-sk_test_placeholder}
-      NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: ${NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY:-pk_test_placeholder}
       STRIPE_WEBHOOK_SECRET: ${STRIPE_WEBHOOK_SECRET:-whsec_placeholder}
       SITE_LOCK: ${SITE_LOCK:-1}
       SITE_LOCK_PASSWORD: ${SITE_LOCK_PASSWORD:?SITE_LOCK_PASSWORD requis}
@@ -52,8 +55,11 @@ services:
       - internal
       - web
     # Migrations + seed à chaque démarrage. Idempotent.
+    # `npx` n'est pas utilisable ici : l'image standalone ne contient pas
+    # node_modules/.bin, npx tenterait donc de télécharger Prisma depuis npm
+    # à chaque démarrage. On appelle directement le binaire de la CLI.
     command: >
-      sh -c "npx prisma migrate deploy && node server.js"
+      sh -c "node node_modules/prisma/build/index.js migrate deploy && node server.js"
 
   caddy:
     image: caddy:2-alpine

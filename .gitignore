@@ -8,8 +8,10 @@
 
 # ─── Données ─────────────────────────────────────────────────────────────
 # Dumps Postgres : contiennent les données clients (emails, commandes).
+# Attention : ne jamais ignorer « *.sql » tout court — les migrations Prisma
+# (web/prisma/migrations/**/migration.sql) DOIVENT être versionnées, sinon
+# `prisma migrate deploy` ne crée aucune table en production.
 backups/
-*.sql
 *.sql.gz
 *.dump
 

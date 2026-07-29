@@ -6,7 +6,7 @@ Boutique en ligne de compléments alimentaires premium pour les femmes, à l'uni
 
 | | |
 |---|---|
-| **Avancement** | Voir [`ROADMAP.md`](./ROADMAP.md) — 25 / 55 tâches |
+| **Avancement** | Voir [`ROADMAP.md`](./ROADMAP.md) — 26 / 55 tâches |
 | **Mise en ligne** | Voir [`DEPLOY.md`](./DEPLOY.md) |
 | **État** | Fonctionne en local · jamais déployé · paiements jamais testés en réel |
 
@@ -54,6 +54,11 @@ Pairs/
 ├─ ROADMAP.md                 ← avancement, tâches faites et à faire
 ├─ DEPLOY.md                  ← mettre le site en ligne pas à pas
 ├─ CLAUDE.md                  ← consignes de travail permanentes pour Claude
+├─ LICENSE                    tous droits réservés, dépôt privé
+│
+├─ .github/workflows/ci.yml   intégration continue : lint, types, build, secrets
+├─ .nvmrc                     version de Node attendue
+├─ .editorconfig              formatage homogène entre éditeurs
 │
 ├─ docker-compose.yml         production : app + Postgres + Caddy
 ├─ docker-compose.dev.yml     développement : Postgres seul
@@ -145,10 +150,12 @@ Tout est dans `web/.env.example`. Les essentielles :
 npm run dev              # serveur de développement
 npm run build            # build de production
 npm run lint             # ESLint
+npm run typecheck        # TypeScript sans émission
+npm run db:migrate       # nouvelle migration après modification du schéma
+npm run db:deploy        # applique les migrations (production)
 npm run db:seed          # réinsère les produits de démonstration
 npm run db:studio        # interface graphique de la base
-npx prisma migrate dev   # nouvelle migration après modification du schéma
-node scripts/preview-emails.mjs   # aperçu HTML des 4 emails
+npm run emails:preview   # aperçu HTML des 4 emails transactionnels
 ```
 
 ### Tester les paiements en local

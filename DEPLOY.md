@@ -145,13 +145,30 @@ Ouvre `https://ton-domaine.fr` dans le navigateur. Tu dois tomber sur la page **
 
 ## 7. Initialiser les données (1ère fois uniquement)
 
-Quand le site tourne, lance le seed pour avoir les 6 produits + avis :
+Les migrations s'appliquent automatiquement au démarrage du conteneur : les tables existent déjà. Il reste à insérer les 6 produits de démonstration.
+
+Le seed s'exécute **depuis ta machine**, pas depuis le conteneur : l'image de production est volontairement minimale et n'embarque pas `tsx`. Postgres écoute sur la boucle locale du serveur, on l'atteint donc par un tunnel SSH.
 
 ```bash
-docker compose --env-file .env.production exec app npx tsx prisma/seed.ts
+# Terminal 1 — ouvrir le tunnel (le laisser tourner)
+ssh -N -L 5433:127.0.0.1:5432 pairs@<IP_DU_SERVEUR>
 ```
 
-> Note : le seed dépend de `tsx` qui n'est pas embarqué dans l'image standalone. Si la commande échoue, alternative : connecte-toi à Postgres et exécute le SQL équivalent, ou exécute le seed via `docker compose exec app sh -c "npx prisma db seed"` après avoir ajouté un script `seed` dans `package.json` sous `prisma.seed`. Pour simplifier, je te recommande de lancer le seed une fois en local connecté à la BDD prod via tunnel SSH.
+```bash
+# Terminal 2 — sur ta machine, lancer le seed à travers le tunnel
+cd web
+DATABASE_URL="postgresql://pairs:<POSTGRES_PASSWORD>@127.0.0.1:5433/pairs?schema=public" \
+  npm run db:seed
+```
+
+Vérification :
+
+```bash
+ssh pairs@<IP_DU_SERVEUR> "cd /opt/pairs && docker compose --env-file .env.production \
+  exec -T postgres psql -U pairs -d pairs -c 'select count(*) from \"Product\";'"
+```
+
+> Ce seed ne sert qu'à ne pas avoir une boutique vide le premier jour. Le catalogue définitif sera saisi par ton associé depuis le back-office (tâche 26 de la roadmap), sans passer par la ligne de commande.
 
 ---
 
@@ -349,8 +366,10 @@ Dashboard → Developers → API keys.
 
 | Clé | Variable d'env |
 |---|---|
-| Publishable key (`pk_…`) | `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` |
 | Secret key (`sk_…`) | `STRIPE_SECRET_KEY` |
+| Signing secret du webhook (`whsec_…`) | `STRIPE_WEBHOOK_SECRET` (étape suivante) |
+
+> La clé publique (`pk_…`) n'est pas nécessaire : le paiement passe par une redirection vers Stripe Checkout, aucun code Stripe ne s'exécute dans le navigateur.
 
 ### 3. Configurer le webhook (CRITIQUE)
 

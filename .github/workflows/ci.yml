@@ -1,0 +1,96 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    name: Lint, types et build
+    runs-on: ubuntu-latest
+
+    # `next build` exécute generateStaticParams, qui interroge la base :
+    # un Postgres est donc nécessaire pour que le build aboutisse.
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: pairs_ci
+          POSTGRES_USER: pairs
+          POSTGRES_PASSWORD: pairs_ci_password
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U pairs"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      DATABASE_URL: postgresql://pairs:pairs_ci_password@localhost:5432/pairs_ci?schema=public
+      NEXTAUTH_SECRET: secret-de-ci-non-sensible-32-caracteres-minimum
+      NEXTAUTH_URL: http://localhost:3000
+      NEXT_PUBLIC_SITE_URL: http://localhost:3000
+      NEXT_TELEMETRY_DISABLED: "1"
+
+    defaults:
+      run:
+        working-directory: web
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+
+      - name: Installer les dépendances
+        run: npm ci
+
+      - name: Générer le client Prisma
+        run: npx prisma generate
+
+      - name: Appliquer les migrations
+        run: npx prisma migrate deploy
+
+      - name: Lint
+        run: npx next lint
+
+      - name: Vérification des types
+        run: npx tsc --noEmit
+
+      - name: Build
+        run: npm run build
+
+  secrets:
+    name: Aucun secret commité
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Vérifier qu'aucun fichier d'environnement réel n'est versionné
+        run: |
+          fichiers=$(git ls-files | grep -E '(^|/)\.env' | grep -v '\.example$' || true)
+          if [ -n "$fichiers" ]; then
+            echo "::error::Fichiers d'environnement versionnés :"
+            echo "$fichiers"
+            exit 1
+          fi
+          echo "Aucun fichier d'environnement réel versionné."
+
+      - name: Vérifier qu'aucune clé Stripe live ne traîne dans le dépôt
+        run: |
+          if git grep -nE 'sk_live_[A-Za-z0-9]+' -- . ':!*.yml' > /dev/null 2>&1; then
+            echo "::error::Une clé Stripe live semble présente dans le code."
+            git grep -nE 'sk_live_[A-Za-z0-9]+' -- . ':!*.yml'
+            exit 1
+          fi
+          echo "Aucune clé Stripe live détectée."

@@ -30,7 +30,9 @@ Toute modification de code a des répercussions ailleurs dans le dépôt. Avant 
 | **Ajouté une dépendance npm** | `web/package.json` · `web/Dockerfile` si elle exige une bibliothèque système · tableau de la stack dans `README.md` |
 | **Modifié `schema.prisma`** | Créer la migration · mettre à jour `prisma/seed.ts` pour les nouveaux champs · nombre de modèles annoncé dans `README.md` · vérifier les routes qui lisent ces champs |
 | **Branché un service externe** (analytics, Sentry, stockage d'images…) | **`Caddyfile` → la CSP**, sinon le script sera bloqué en production · `next.config.mjs` → `images.remotePatterns` si ce sont des images · variables d'environnement (voir ligne dédiée) · section dédiée dans `DEPLOY.md` |
-| **Ajouté un script npm** | Section « commandes utiles » de `README.md` |
+| **Ajouté un script npm** | Section « commandes utiles » de `README.md` · `.github/workflows/ci.yml` si le script doit tourner en intégration continue |
+| **Ajouté un fichier à la racine** | Arborescence commentée du `README.md` |
+| **Modifié les étapes de vérification** | `.github/workflows/ci.yml` et la règle 2 de ce fichier doivent rester alignés |
 | **Ajouté un fichier généré, un secret ou des données** | `.gitignore` racine ou `web/.gitignore` · vérifier avec `git check-ignore -v <fichier>` |
 | **Ajouté un email transactionnel** | `web/src/emails/` · brancher dans la route concernée · `scripts/preview-emails.mjs` · `DEPLOY.md` section Resend |
 | **Modifié le processus de déploiement** | `DEPLOY.md` · `scripts/*.sh` · `docker-compose.yml` |
@@ -50,13 +52,14 @@ Toute modification de code a des répercussions ailleurs dans le dépôt. Avant 
 Ne jamais présenter un travail comme terminé sans avoir lancé ce qui est vérifiable :
 
 ```bash
-cd web && npx next lint                 # doit sortir « No ESLint warnings or errors »
-cd web && npx tsc --noEmit              # erreurs Prisma acceptables si le client n'est pas généré
+cd web && npm run lint                  # doit sortir « No ESLint warnings or errors »
+cd web && npm run typecheck             # erreurs Prisma acceptables si le client n'est pas généré
 cd web && npm run build                 # quand l'environnement le permet
-python3 -c "import yaml,sys; [yaml.safe_load(open(f)) for f in ['docker-compose.yml','docker-compose.dev.yml']]"
-grep -rn "](\./" *.md                   # liens internes entre documents
+python3 -c "import yaml,sys; [yaml.safe_load(open(f)) for f in ['docker-compose.yml','docker-compose.dev.yml','.github/workflows/ci.yml']]"
 git check-ignore -v .env.production     # les secrets restent bloqués
 ```
+
+Ce sont les mêmes contrôles que ceux exécutés par l'intégration continue (`.github/workflows/ci.yml`) : si ça passe en local, ça passe sur GitHub.
 
 Distinguer explicitement, dans le compte rendu, **ce qui a été vérifié** de **ce qui est seulement écrit**. Une erreur due à l'environnement (moteurs Prisma inaccessibles, réseau restreint) doit être annoncée comme telle, pas masquée.
 

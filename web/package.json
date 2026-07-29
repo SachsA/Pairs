@@ -2,14 +2,25 @@
   "name": "pairs-web",
   "version": "0.1.0",
   "private": true,
+  "license": "UNLICENSED",
+  "description": "Boutique en ligne de compléments alimentaires premium pour les femmes",
+  "engines": {
+    "node": ">=20"
+  },
+  "prisma": {
+    "seed": "tsx prisma/seed.ts"
+  },
   "scripts": {
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "db:push": "prisma db push",
+    "typecheck": "tsc --noEmit",
+    "db:migrate": "prisma migrate dev",
+    "db:deploy": "prisma migrate deploy",
     "db:seed": "tsx prisma/seed.ts",
     "db:studio": "prisma studio",
+    "emails:preview": "node scripts/preview-emails.mjs",
     "postinstall": "prisma generate"
   },
   "dependencies": {
